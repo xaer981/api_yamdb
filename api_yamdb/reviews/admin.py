@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Category, Genre, Title, TitleGenre
+from .models import Category, Comment, Genre, Review, Title, TitleGenre
 
 
 @admin.register(Category)
@@ -20,4 +20,14 @@ class TitleAdmin(admin.ModelAdmin):
 
 @admin.register(TitleGenre)
 class TitleGenreAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
     pass
