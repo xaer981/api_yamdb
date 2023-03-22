@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
@@ -5,9 +7,10 @@ from django.db import models
 class Category(models.Model):
     name = models.CharField(max_length=256,
                             verbose_name='название')
-    slug = models.SlugField()
+    slug = models.SlugField(unique=True)
 
     class Meta:
+        ordering = ('name',)
         verbose_name = 'категория'
         verbose_name_plural = 'категории'
 
@@ -19,9 +22,10 @@ class Category(models.Model):
 class Genre(models.Model):
     name = models.CharField(max_length=256,
                             verbose_name='название')
-    slug = models.SlugField()
+    slug = models.SlugField(unique=True)
 
     class Meta:
+        ordering = ('name',)
         verbose_name = 'жанр'
         verbose_name_plural = 'жанры'
 
@@ -34,7 +38,15 @@ class Title(models.Model):
     name = models.CharField(max_length=256,
                             verbose_name='название',
                             unique=True)
-    year = models.PositiveSmallIntegerField(verbose_name='год создания')
+    year = models.PositiveSmallIntegerField(verbose_name='год создания',
+                                            validators=[
+                                                MaxValueValidator(
+                                                    int(datetime.now().year),
+                                                    ('Нельзя добавить '
+                                                     'произведение '
+                                                     'из будущего.')
+                                                )]
+                                            )
     description = models.TextField(verbose_name='описание')
     genre = models.ManyToManyField(Genre,
                                    through='TitleGenre',
@@ -47,6 +59,7 @@ class Title(models.Model):
                                  verbose_name='категория')
 
     class Meta:
+        ordering = ('name',)
         verbose_name = 'произведение'
         verbose_name_plural = 'произведения'
 
