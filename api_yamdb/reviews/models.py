@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from users.models import User
 
 
 class Category(models.Model):
@@ -89,7 +90,7 @@ class Review(models.Model):
     text = models.TextField()
     score = models.IntegerField(validators=[MinValueValidator(1),
                                             MaxValueValidator(10)])
-    author = models.ForeignKey('User', on_delete=models.CASCADE)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     class Meta:
@@ -104,7 +105,7 @@ class Review(models.Model):
 
 
 class Comment(models.Model):
-    author = models.ForeignKey('User', on_delete=models.CASCADE)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
     review = models.ForeignKey(Review, on_delete=models.CASCADE,
                                related_name='comments')
     text = models.TextField()
