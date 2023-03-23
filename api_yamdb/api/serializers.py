@@ -1,4 +1,5 @@
 from django.core.validators import EmailValidator
+from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
@@ -21,17 +22,27 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class TitleGETSerializer(serializers.ModelSerializer):
-    genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
+    genre = GenreSerializer(many=True, read_only=True)
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
         fields = ('id',
                   'name',
                   'year',
+                  'rating',
                   'description',
                   'genre',
                   'category')
+
+    def get_rating(self, obj):
+        if avg_score := obj.reviews.aggregate(
+                (Avg('score')))['score__avg']:
+
+            return round(avg_score)
+
+        return 'None'
 
 
 class TitleSerializer(serializers.ModelSerializer):
