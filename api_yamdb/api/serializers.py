@@ -1,7 +1,8 @@
 from django.core.validators import EmailValidator
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from reviews.models import Category, Genre, Title
+
+from reviews.models import Category, Comment, Genre, Title, Review
 from users.models import User
 
 
@@ -51,13 +52,49 @@ class TitleSerializer(serializers.ModelSerializer):
                   'category')
 
 
+class ReviewSerializer(serializers.ModelSerializer):
+    title = serializers.SlugRelatedField(
+        read_only=True, slug_field='title'
+    )
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username'
+    )
+
+    class Meta:
+        model = Review
+        fields = ('id',
+                  'title',
+                  'author',
+                  'text',
+                  'score',
+                  'pub_date')
+        read_only_fields = ('author', 'title')
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    review = serializers.SlugRelatedField(
+        read_only=True, slug_field='review'
+    )
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username'
+    )
+
+    class Meta:
+        model = Comment
+        fields = ('id', 'text', 'author', 'pub_date')
+        read_only_fields = ('author', 'review')
+
+
 class UserSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = User
-        fields = (
-            'username', 'email', 'first_name', 'last_name',
-            'bio', 'role',
-        )
+        fields = ('username',
+                  'email',
+                  'first_name',
+                  'last_name',
+                  'bio',
+                  'role')
         required_fields = ('username', 'email',)
         read_only_fields = ('role',)
 
@@ -67,10 +104,12 @@ class AdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = (
-            'username', 'email', 'first_name', 'last_name',
-            'bio', 'role',
-        )
+        fields = ('username',
+                  'email',
+                  'first_name',
+                  'last_name',
+                  'bio',
+                  'role')
         required_fields = ('username', 'email',)
 
 
