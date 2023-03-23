@@ -36,8 +36,7 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    http_method_names = ['GET', 'POST', 'PATCH', 'DELETE']
-    queryset = Review.objects.all()
+    http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = ReviewSerializer
 
     def get_queryset(self):
@@ -51,7 +50,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-    http_method_names = ['GET', 'POST', 'PATCH', 'DELETE']
+    http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = CommentSerializer
 
     def get_queryset(self):
