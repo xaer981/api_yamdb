@@ -6,18 +6,17 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.validators import ValidationError
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .filters import TitleFilters
 from .mixins import CreateListDestroyViewSet
 from .permissions import IsAdmin, IsGuest
 from .serializers import (AdminSerializer, CategorySerializer,
-                          CommentSerializer, GenreSerializer,
-                          ReviewSerializer, SignupSerializer,
-                          TitleGETSerializer, TitleSerializer,
-                          TokenSerializer, UserSerializer)
-from reviews.models import Category, Comment, Genre, Review, Title
+                          CommentSerializer, GenreSerializer, ReviewSerializer,
+                          SignupSerializer, TitleGETSerializer,
+                          TitleSerializer, TokenSerializer, UserSerializer)
+from reviews.models import Category, Genre, Review, Title
 from users.models import User
 
 
