@@ -2,7 +2,7 @@ import csv
 
 from django.db import IntegrityError, OperationalError
 from django.core.management.base import BaseCommand, CommandError
-
+from django.db import IntegrityError
 from reviews.models import (Category, Comment, Genre, Review, Title,
                             TitleGenre, User)
 
