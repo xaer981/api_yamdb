@@ -2,25 +2,22 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets
-from rest_framework import status
+from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-
-from api_yamdb.users.models import User
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.validators import ValidationError
 
 from .filters import TitleFilters
 from .mixins import CreateListDestroyViewSet
-from rest_framework.response import Response
-from rest_framework.validators import ValidationError
-from rest_framework_simplejwt.tokens import RefreshToken
-from reviews.models import Category, Comment, Genre, Review, Title
-from .permissions import (IsAdmin, IsGuest)
+from .permissions import IsAdmin, IsGuest
 from .serializers import (AdminSerializer, CategorySerializer,
                           CommentSerializer, GenreSerializer,
+                          ReviewSerializer, SignupSerializer,
                           TitleGETSerializer, TitleSerializer,
-                          ReviewSerializer, SignupSerializer, TokenSerializer,
-                          UserSerializer)
+                          TokenSerializer, UserSerializer)
+from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
 
 
