@@ -42,7 +42,7 @@ class TitleGETSerializer(serializers.ModelSerializer):
 
             return round(avg_score)
 
-        return 'None'
+        return None
 
 
 class TitleSerializer(serializers.ModelSerializer):
