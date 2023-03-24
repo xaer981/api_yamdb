@@ -47,22 +47,36 @@ class GenreViewSet(CreateListDestroyViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = ReviewSerializer
-    permission_classes = (CreateOrIsAuthorOrReadOnly)
+    permission_classes = (CreateOrIsAuthorOrReadOnly,)
 
     def get_queryset(self):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
 
         return title.reviews.all()
 
-    def perform_create(self, serializer):
-        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
-        serializer.save(author=self.request.user, title=title)
+    def create(self, request, *args, **kwargs):
+        title = get_object_or_404(Title, id=self.kwargs['title_id'])
+        serializer = ReviewSerializer(data=request.data)
+
+        # if title.reviews.filter(author=self.request.user).exists():
+        #     return Response(status=status.HTTP_400_BAD_REQUEST)
+        # elif serializer.is_valid(raise_exception=True):
+        #     serializer.save(author=self.request.user, title_id=title.id)
+        #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        if serializer.is_valid(raise_exception=True):
+            if title.reviews.filter(author=self.request.user).exists():
+
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            serializer.save(author=self.request.user, title_id=title.id)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = CommentSerializer
-    permission_classes = (CreateOrIsAuthorOrReadOnly)
+    permission_classes = (CreateOrIsAuthorOrReadOnly,)
 
     def get_queryset(self):
         review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
