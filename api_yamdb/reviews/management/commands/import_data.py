@@ -1,5 +1,6 @@
 import csv
 
+from django.db import IntegrityError, OperationalError
 from django.core.management.base import BaseCommand, CommandError
 from django.db import IntegrityError
 from reviews.models import (Category, Comment, Genre, Review, Title,
@@ -61,8 +62,12 @@ class Command(BaseCommand):
 
                     try:
                         model_name.objects.create(**row)
+
+                    except OperationalError as e:
+                        raise CommandError(e)
+
                     except IntegrityError:
                         continue
 
         self.stdout.write(self.style.SUCCESS(
-            'Данные успешно импортированы!'))
+            '\nДанные успешно импортированы!'))
