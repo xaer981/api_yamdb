@@ -3,16 +3,21 @@ from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.validators import ValidationError
 
 from .filters import TitleFilters
 from .mixins import CreateListDestroyViewSet
-from reviews.models import Category, Genre, Review, Title
+from .permissions import IsAdmin, IsGuest
 from .serializers import (AdminSerializer, CategorySerializer,
-                          CommentSerializer, GenreSerializer, ReviewSerializer,
-                          SignupSerializer, TitleGETSerializer,
-                          TitleSerializer, UserSerializer)
+                          CommentSerializer, GenreSerializer,
+                          ReviewSerializer, SignupSerializer,
+                          TitleGETSerializer, TitleSerializer,
+                          TokenSerializer, UserSerializer)
+from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
 
 
@@ -73,8 +78,14 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = AdminSerializer
     lookup_field = 'username'
     search_fields = ('username',)
-    # permission_classes =
+    permission_classes = (IsAuthenticated, IsAdmin,)
 
+    @action(
+        detail=False,
+        methods=['GET', 'PATCH'],
+        permission_classes=(IsAuthenticated,),
+        url_path='me',
+    )
     def me(self, request):
         user = request.user
         if request.method == 'GET':
@@ -95,6 +106,8 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@api_view(['POST'])
+@permission_classes([IsGuest])
 def signup(request):
     if request.user.is_authenticated:
         raise ValidationError('Вы уже зарегистрированы!')
@@ -110,3 +123,26 @@ def signup(request):
     )
 
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def get_token(request):
+    serializer = TokenSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    user = get_object_or_404(
+        User,
+        username=serializer.validated_data['username']
+    )
+    if not default_token_generator.check_token(
+        user,
+        serializer.validated_data['confirmation_code']
+    ):
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    token = RefreshToken.for_user(user)
+    return Response(
+        {'token': str(token.access_token)},
+        status=status.HTTP_200_OK
+    )
