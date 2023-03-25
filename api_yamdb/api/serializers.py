@@ -1,7 +1,5 @@
-from django.core.validators import EmailValidator
 from django.db.models import Avg
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
 
@@ -124,23 +122,10 @@ class AdminSerializer(serializers.ModelSerializer):
 
 
 class SignupSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(
-        validators=(
-            UniqueValidator(queryset=User.objects.all()),
-            EmailValidator()
-        ),
-        max_length=254,
-        required=True,
-    )
-    username = serializers.CharField(
-        validators=(UniqueValidator(queryset=User.objects.all()),),
-        max_length=150,
-        required=True
-    )
 
     class Meta:
         model = User
-        fields = ('username', 'email',)
+        fields = ('username', 'email')
 
     def validate_username(self, value):
         if value == 'me':
