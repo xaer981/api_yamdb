@@ -19,7 +19,7 @@ class User(AbstractUser):
     username = models.CharField(
         max_length=150,
         unique=True,
-        verbose_name='Отображаемое имя',
+        verbose_name='отображаемое имя',
         validators=[RegexValidator(
             regex=r'^[\w.@+-]+$',
             message='username содержит недопустимый символ'
@@ -29,24 +29,24 @@ class User(AbstractUser):
     email = models.EmailField(
         max_length=254,
         unique=True,
-        verbose_name='Электронная почта'
+        verbose_name='электронная почта'
     )
 
     first_name = models.CharField(
-        max_length=150, verbose_name='Имя', blank=True
+        max_length=150, verbose_name='имя', blank=True
     )
 
     last_name = models.CharField(
-        max_length=150, verbose_name='Фамилия', blank=True
+        max_length=150, verbose_name='фамилия', blank=True
     )
 
-    bio = models.TextField(verbose_name='Биография', blank=True)
+    bio = models.TextField(verbose_name='биография', blank=True)
 
     role = models.CharField(
         max_length=15,
         default=USER,
         choices=ROLE_CHOICE,
-        verbose_name='Роль'
+        verbose_name='роль'
     )
 
     class Meta:
