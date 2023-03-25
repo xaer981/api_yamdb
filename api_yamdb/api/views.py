@@ -2,19 +2,17 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status, viewsets
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.validators import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
 
 from .filters import TitleFilters
 from .mixins import CreateListDestroyViewSet
-from .permissions import (CreateOrIsAuthorOrReadOnly, IsAdmin,
-                          IsAdminOrReadOnly, IsGuest)
+from .permissions import CreateOrIsAuthorOrReadOnly, IsAdmin, IsAdminOrReadOnly
 from .serializers import (AdminSerializer, CategorySerializer,
                           CommentSerializer, GenreSerializer, ReviewSerializer,
                           SignupSerializer, TitleGETSerializer,
@@ -90,8 +88,10 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = AdminSerializer
     lookup_field = 'username'
+    filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     permission_classes = (IsAuthenticated, IsAdmin,)
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     @action(
         detail=False,
@@ -120,13 +120,16 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['POST'])
-@permission_classes([IsGuest])
+@permission_classes([AllowAny])
 def signup(request):
-    if request.user.is_authenticated:
-        raise ValidationError('Вы уже зарегистрированы!')
-    serializer = SignupSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    user = serializer.save()
+    user_exists = User.objects.filter(**request.data).exists()
+    if user_exists:
+        user = user_exists
+    else:
+        serializer = SignupSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
         subject='Добро пожаловать на проект YaMDb!',
@@ -135,10 +138,12 @@ def signup(request):
         message=confirmation_code
     )
 
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response({"username": user.username, "email": user.email},
+                    status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def get_token(request):
     serializer = TokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
