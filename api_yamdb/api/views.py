@@ -58,12 +58,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
         title = get_object_or_404(Title, id=self.kwargs['title_id'])
         serializer = ReviewSerializer(data=request.data)
 
-        # if title.reviews.filter(author=self.request.user).exists():
-        #     return Response(status=status.HTTP_400_BAD_REQUEST)
-        # elif serializer.is_valid(raise_exception=True):
-        #     serializer.save(author=self.request.user, title_id=title.id)
-        #     return Response(serializer.data, status=status.HTTP_201_CREATED)
-
         if serializer.is_valid(raise_exception=True):
             if title.reviews.filter(author=self.request.user).exists():
 
