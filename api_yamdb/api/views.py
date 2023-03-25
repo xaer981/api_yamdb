@@ -1,4 +1,5 @@
 from django.contrib.auth.tokens import default_token_generator
+from django.http import QueryDict
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
@@ -126,15 +127,20 @@ class UserCreateViewSet(mixins.CreateModelMixin,
     permission_classes = (AllowAny,)
 
     def create(self, request):
-        serializer = self.serializer_class(data=request.data)
-        if User.objects.filter(**request.data).exists():
-            user = User.objects.get(**request.data)
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        if isinstance(data, QueryDict):
+            data = (request.data).dict()
+
+        if User.objects.filter(**data).exists():
+            user = User.objects.get(**data)
             create_code_and_send_email(user)
 
-            return Response(serializer.initial_data, status=status.HTTP_200_OK)
+            return Response(serializer.initial_data,
+                            status=status.HTTP_200_OK)
 
         serializer.is_valid(raise_exception=True)
-        user = User.objects.create(**serializer.validated_data)
+        user = serializer.save()
         create_code_and_send_email(user)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
