@@ -1,5 +1,6 @@
 from django.db.models import Avg
 from rest_framework import serializers
+from rest_framework.response import Response
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
 
@@ -62,11 +63,23 @@ class TitleSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     title = serializers.SlugRelatedField(
-        read_only=True, slug_field='name'
+        read_only=True, slug_field='name',
     )
     author = serializers.SlugRelatedField(
-        read_only=True, slug_field='username'
+        read_only=True, slug_field='username',
     )
+
+    def validate_title_exists(self):
+        if not Title.objects.filter(
+           title_id=self.request.data['title_id']).exists():
+
+            return Response({"Ошибка": "Title_id не найден"})
+
+    def validate_score(self, value):
+        if 0 > value > 10:
+            raise serializers.ValidationError(
+                'Допускается оценка только от 1 до 10!')
+        return value
 
     class Meta:
         model = Review
@@ -77,6 +90,8 @@ class ReviewSerializer(serializers.ModelSerializer):
                   'score',
                   'pub_date')
         read_only_fields = ('author', 'title')
+        extra_kwargs = {'title': {'required': True},
+                        'author': {'required': True}}
 
 
 class CommentSerializer(serializers.ModelSerializer):
