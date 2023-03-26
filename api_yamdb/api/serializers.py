@@ -81,6 +81,11 @@ class ReviewSerializer(serializers.ModelSerializer):
                 'Допускается оценка только от 1 до 10!')
         return value
 
+    def validate_duplicate(self, request, data):
+        if Review.objects.get(
+           author=request.user, title=self.data['title'].exists):
+            raise serializers.ValidationError('Уже существует')
+
     class Meta:
         model = Review
         fields = ('id',
