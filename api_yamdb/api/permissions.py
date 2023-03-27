@@ -22,10 +22,12 @@ class IsAdminOrReadOnly(BasePermission):
 
 class CreateOrIsAuthorOrReadOnly(BasePermission):
     def has_permission(self, request, view):
-        if request.user.is_anonymous:
-            return request.method in SAFE_METHODS
 
-        return True
+        return (
+            (request.user.is_anonymous
+             and request.method in SAFE_METHODS)
+            or request.user.is_authenticated
+        )
 
     def has_object_permission(self, request, view, obj):
 
@@ -35,9 +37,3 @@ class CreateOrIsAuthorOrReadOnly(BasePermission):
             or request.user.is_moder
             or request.user == obj.author
         )
-
-
-class IsGuest(BasePermission):
-    def has_permission(self, request, view):
-
-        return request.user.is_anonymous

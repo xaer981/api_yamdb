@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from rest_framework.response import Response
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
 
@@ -60,11 +59,12 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True, slug_field='username',
     )
 
-    def validate_title_exists(self):
+    def validate_title(self, value):
         if not Title.objects.filter(
            title_id=self.request.data['title_id']).exists():
+            raise serializers.ValidationError('title_id не найден')
 
-            return Response({"Ошибка": "Title_id не найден"})
+        return value
 
     def validate_score(self, value):
         if 0 > value > 10:
@@ -73,8 +73,8 @@ class ReviewSerializer(serializers.ModelSerializer):
         return value
 
     def validate_duplicate(self, request, data):
-        if Review.objects.get(
-           author=request.user, title=self.data['title'].exists):
+        if Review.objects.filter(
+           author=request.user, title=self.data['title']).exists():
             raise serializers.ValidationError('Уже существует')
 
     class Meta:
