@@ -1,4 +1,5 @@
 from django.contrib.auth.tokens import default_token_generator
+from django.db.models import Avg
 from django.http import QueryDict
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -21,7 +22,8 @@ from .utils import create_code_and_send_email
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.prefetch_related('genre', 'category')
+    queryset = (Title.objects.prefetch_related('genre', 'category')
+                .annotate(rating=Avg('reviews__score')))
     http_method_names = ['get', 'post', 'patch', 'delete']
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilters
