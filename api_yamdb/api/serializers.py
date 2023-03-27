@@ -1,6 +1,9 @@
-from django.db.models import Avg
+from django.core.validators import RegexValidator
 from rest_framework import serializers
+
+from reviews.constants import MAX_SCORE, MIN_SCORE
 from reviews.models import Category, Comment, Genre, Review, Title
+from users.constants import EMAIL_MAX_LENGTH, NAME_MAX_LENGTH
 from users.models import User
 
 
@@ -21,7 +24,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class TitleGETSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(many=True, read_only=True)
-    rating = serializers.SerializerMethodField()
+    rating = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Title
@@ -32,14 +35,6 @@ class TitleGETSerializer(serializers.ModelSerializer):
                   'description',
                   'genre',
                   'category')
-
-    def get_rating(self, obj):
-        if avg_score := obj.reviews.aggregate(
-                (Avg('score')))['score__avg']:
-
-            return round(avg_score)
-
-        return None
 
 
 class TitleSerializer(serializers.ModelSerializer):
@@ -62,11 +57,29 @@ class TitleSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     title = serializers.SlugRelatedField(
-        read_only=True, slug_field='name'
+        read_only=True, slug_field='name',
     )
     author = serializers.SlugRelatedField(
-        read_only=True, slug_field='username'
+        read_only=True, slug_field='username',
     )
+
+    def validate_title(self, value):
+        if not Title.objects.filter(
+           title_id=self.request.data['title_id']).exists():
+            raise serializers.ValidationError('title_id не найден')
+
+        return value
+
+    def validate_score(self, value):
+        if MIN_SCORE > value > MAX_SCORE:
+            raise serializers.ValidationError(
+                'Допускается оценка только от 1 до 10!')
+        return value
+
+    def validate_duplicate(self, request, data):
+        if Review.objects.filter(
+           author=request.user, title=self.data['title']).exists():
+            raise serializers.ValidationError('Уже существует')
 
     class Meta:
         model = Review
@@ -77,6 +90,8 @@ class ReviewSerializer(serializers.ModelSerializer):
                   'score',
                   'pub_date')
         read_only_fields = ('author', 'title')
+        extra_kwargs = {'title': {'required': True},
+                        'author': {'required': True}}
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -121,17 +136,35 @@ class AdminSerializer(serializers.ModelSerializer):
         required_fields = ('username', 'email',)
 
 
-class SignupSerializer(serializers.ModelSerializer):
+class SignupSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
+    username = serializers.CharField(max_length=NAME_MAX_LENGTH)
 
-    class Meta:
-        model = User
-        fields = ('username', 'email')
+    def create(self, validated_data):
+
+        return User.objects.create(**validated_data)
 
     def validate_username(self, value):
+        regex_validatior = RegexValidator(r'^[\w.@+-]+$')
         if value == 'me':
             raise serializers.ValidationError('недопустимое имя')
+        regex_validatior(value)
 
         return value
+
+    def validate(self, data):
+        username = data.get('username')
+        email = data.get('email')
+
+        if User.objects.filter(username=username).exists():
+            raise serializers.ValidationError(
+                'Пользователь с таким никнеймом уже существует.')
+
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError(
+                'Пользователь с таким email уже существует.')
+
+        return data
 
 
 class TokenSerializer(serializers.Serializer):

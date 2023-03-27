@@ -2,11 +2,13 @@ from datetime import datetime
 
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+
+from .constants import MAX_SCORE, MIN_SCORE, NAME_MAX_LENGTH, TEXT_LENGTH
 from users.models import User
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=256,
+    name = models.CharField(max_length=NAME_MAX_LENGTH,
                             verbose_name='название')
     slug = models.SlugField(unique=True)
 
@@ -21,7 +23,7 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
-    name = models.CharField(max_length=256,
+    name = models.CharField(max_length=NAME_MAX_LENGTH,
                             verbose_name='название')
     slug = models.SlugField(unique=True)
 
@@ -36,7 +38,7 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    name = models.CharField(max_length=256,
+    name = models.CharField(max_length=NAME_MAX_LENGTH,
                             verbose_name='название',
                             unique=True)
     year = models.PositiveSmallIntegerField(verbose_name='год создания',
@@ -89,8 +91,8 @@ class Review(models.Model):
                               related_name='reviews',
                               verbose_name='Отзыв')
     text = models.TextField()
-    score = models.IntegerField(validators=[MinValueValidator(1),
-                                            MaxValueValidator(10)])
+    score = models.IntegerField(validators=[MinValueValidator(MIN_SCORE),
+                                            MaxValueValidator(MAX_SCORE)])
     author = models.ForeignKey(User, on_delete=models.CASCADE,
                                related_name='reviews',
                                verbose_name='Автор отзыва')
@@ -100,7 +102,7 @@ class Review(models.Model):
         db_table = 'Review'
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
-        ordering = ('pub_date',)
+        ordering = ('-pub_date',)
         constraints = [
             models.UniqueConstraint(fields=['title', 'author'],
                                     name='one_review_by_title_for_user')
@@ -108,7 +110,7 @@ class Review(models.Model):
 
     def __str__(self):
 
-        return self.text
+        return self.text[:TEXT_LENGTH]
 
 
 class Comment(models.Model):
