@@ -57,29 +57,25 @@ class TitleSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     title = serializers.SlugRelatedField(
-        read_only=True, slug_field='name',
+        read_only=True, slug_field='name'
     )
     author = serializers.SlugRelatedField(
-        read_only=True, slug_field='username',
+        read_only=True, slug_field='username'
     )
 
-    def validate_title(self, value):
-        if not Title.objects.filter(
-           title_id=self.request.data['title_id']).exists():
-            raise serializers.ValidationError('title_id не найден')
-
-        return value
-
     def validate_score(self, value):
-        if MIN_SCORE > value > MAX_SCORE:
+        if value < MIN_SCORE or value > MAX_SCORE:
             raise serializers.ValidationError(
                 'Допускается оценка только от 1 до 10!')
+
         return value
 
-    def validate_duplicate(self, request, data):
-        if Review.objects.filter(
-           author=request.user, title=self.data['title']).exists():
+    def validate(self, data):
+        if Review.objects.filter(author=self.context.get('request').user,
+                                 title=self.context.get('title_id')).exists():
             raise serializers.ValidationError('Уже существует')
+
+        return data
 
     class Meta:
         model = Review
@@ -109,20 +105,6 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = User
-        fields = ('username',
-                  'email',
-                  'first_name',
-                  'last_name',
-                  'bio',
-                  'role')
-        required_fields = ('username', 'email',)
-        read_only_fields = ('role',)
-
-
-class AdminSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(choices=User.ROLE_CHOICE, default='user')
 
     class Meta:
@@ -137,8 +119,8 @@ class AdminSerializer(serializers.ModelSerializer):
 
 
 class SignupSerializer(serializers.Serializer):
-    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
-    username = serializers.CharField(max_length=NAME_MAX_LENGTH)
+    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH, required=True)
+    username = serializers.CharField(max_length=NAME_MAX_LENGTH, required=True)
 
     def create(self, validated_data):
 

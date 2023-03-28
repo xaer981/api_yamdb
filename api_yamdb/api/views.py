@@ -12,10 +12,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .filters import TitleFilters
 from .mixins import CreateListDestroyViewSet
 from .permissions import CreateOrIsAuthorOrReadOnly, IsAdmin, IsAdminOrReadOnly
-from .serializers import (AdminSerializer, CategorySerializer,
-                          CommentSerializer, GenreSerializer, ReviewSerializer,
-                          SignupSerializer, TitleGETSerializer,
-                          TitleSerializer, TokenSerializer, UserSerializer)
+from .serializers import (CategorySerializer, CommentSerializer,
+                          GenreSerializer, ReviewSerializer, SignupSerializer,
+                          TitleGETSerializer, TitleSerializer, TokenSerializer,
+                          UserSerializer)
 from .utils import create_code_and_send_email
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
@@ -61,12 +61,11 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         title = get_object_or_404(Title, id=self.kwargs['title_id'])
-        serializer = ReviewSerializer(data=request.data)
+        serializer = ReviewSerializer(
+            data=request.data,
+            context={'request': request, 'title_id': self.kwargs['title_id']})
 
         if serializer.is_valid(raise_exception=True):
-            if title.reviews.filter(author=self.request.user).exists():
-
-                return Response(status=status.HTTP_400_BAD_REQUEST)
             serializer.save(author=self.request.user, title_id=title.id)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -89,7 +88,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = AdminSerializer
+    serializer_class = UserSerializer
     lookup_field = 'username'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
@@ -105,16 +104,21 @@ class UserViewSet(viewsets.ModelViewSet):
     def me(self, request):
         user = request.user
         if request.method == 'GET':
-            serializer = AdminSerializer(user)
+            serializer = UserSerializer(user)
 
             return Response(serializer.data, status=status.HTTP_200_OK)
         if user.is_admin:
-            serializer = AdminSerializer(
+            serializer = UserSerializer(
                 user, data=request.data, partial=True
             )
         else:
+            data = request.data
+            if isinstance(data, QueryDict):
+                data = (request.data).dict()
+            if data.get('role'):
+                del data['role']
             serializer = UserSerializer(
-                user, data=request.data, partial=True
+                user, data=data, partial=True
             )
         serializer.is_valid(raise_exception=True)
         serializer.save()
